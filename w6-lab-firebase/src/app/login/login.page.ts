@@ -45,7 +45,7 @@ export class LoginPage {
     if (this.loginForm.valid) {
       const { email, password } = this.loginForm.value;
       try {
-        await this.authService.authenticateUser({ email: email as string, password: password as string });
+        await this.authService.signInUser(email as string, password as string);
         this.router.navigate(['/home']);
       } catch (error) {
         console.error('Login failed', error);

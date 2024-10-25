@@ -1,31 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import {
-  AlertController,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonButtons,
-  IonList,
-  IonItemSliding,
-  IonItem,
-  IonLabel,
-  IonIcon,
-  IonCheckbox,
-  IonItemOptions,
-  IonItemOption,
-  IonFooter,
-  IonText,
-  IonFab,
-  IonFabButton,
-} from '@ionic/angular/standalone';
+import { AlertController, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonButtons, IonList, IonItemSliding, IonItem, IonLabel, IonIcon, IonCheckbox, IonItemOptions, IonItemOption, IonFooter, IonText, IonFab, IonFabButton } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { logOutOutline, pencilOutline, trashOutline, add } from 'ionicons/icons';
 import { AuthService } from '../auth.service';
 import { TasksService, Task } from '../tasks.service';
+import { Observable } from 'rxjs';
+import { User } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-home',
@@ -54,77 +36,46 @@ import { TasksService, Task } from '../tasks.service';
   ],
 })
 export class HomePage {
-  private authService = inject(AuthService);
-  private tasksService = inject(TasksService);
-  private routerService = inject(Router);
-  private alertController = inject(AlertController);
-
-  // Get the user's tasks from the tasks service
   userTasks$ = this.tasksService.getUserTasks();
-  // Get the current user from the auth service to display the user's email at the bottom of the page
-  currentUser = this.authService.fetchActiveUser();
+  currentUser$: Observable<User | null>;
 
-  constructor() {
-    // Add the necessary icons to the page
-    addIcons({ logOutOutline, pencilOutline, trashOutline, add });
+  constructor(
+    private tasksService: TasksService,
+    private authService: AuthService,
+    private alertController: AlertController,
+    private router: Router
+  ) {
+    this.currentUser$ = this.authService.fetchActiveUser();
   }
 
-  async addTask() {
-    const alert = await this.alertController.create({
-      header: 'New Task',
-      inputs: [
-        {
-          name: 'content',
-          type: 'text',
-          placeholder: 'Enter task description'
-        }
-      ],
-      buttons: [
-        { text: 'Cancel', role: 'cancel' },
-        {
-          text: 'Add',
-          handler: (data) => {
-            if (data.content?.trim()) {
-              this.tasksService.createTask({
-                content: data.content,
-                completed: false
-              });
-            }
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  async toggleTask(event: Event, task: Task) {
-    task.completed = (event as CustomEvent).detail.checked;
-    await this.tasksService.toggleTaskCompleted(task);
+  trackById(index: number, item: Task): string {
+    return item.id ?? '';
   }
 
   async editTask(task: Task, slidingItem: IonItemSliding) {
     const alert = await this.alertController.create({
-      header: 'Update Task',
-      inputs: [{ 
-        name: 'content', 
-        value: task.content, 
-        type: 'text' 
-      }],
-      buttons: [
-        { 
-          text: 'Cancel', 
-          role: 'cancel',
-          handler: () => slidingItem.close()
+      header: 'Edit Task',
+      inputs: [
+        {
+          name: 'content',
+          type: 'text',
+          value: task.content,
         },
-        { 
+      ],
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => slidingItem.close(),
+        },
+        {
           text: 'Update',
           handler: (data) => {
             this.tasksService.updateTask({ ...task, content: data.content });
             slidingItem.close();
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
 
     await alert.present();
@@ -136,6 +87,6 @@ export class HomePage {
 
   async signOut() {
     await this.authService.signOutUser();
-    await this.routerService.navigateByUrl('/', { replaceUrl: true });
+    this.router.navigate(['/login']);
   }
 }

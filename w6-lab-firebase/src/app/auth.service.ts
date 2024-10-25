@@ -2,7 +2,7 @@
  * Service responsible for handling authentication operations
  * including user registration, authentication, password reset, and sign out.
  */
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -12,6 +12,7 @@ import {
   User,
   UserCredential,
 } from '@angular/fire/auth';
+import { from, Observable } from 'rxjs';
 
 /**
  * Interface for authentication request data
@@ -25,43 +26,46 @@ interface UserAuthData {
   providedIn: 'root'
 })
 export class AuthService {
-  /**
-   * Firebase Authentication instance
-   */
-  private readonly firebaseAuth = inject(Auth);
+  constructor(private auth: Auth) {}
 
   /**
    * Registers a new user with email and password
-   * @param userAuthData - The user's email and password
-   * @returns Promise resolving to UserCredential
+   * @param email - The user's email
+   * @param password - The user's password
+   * @returns Promise resolving when registration is complete
    */
-  async registerUser(userAuthData: UserAuthData): Promise<UserCredential> {
-    return createUserWithEmailAndPassword(
-      this.firebaseAuth,
-      userAuthData.email,
-      userAuthData.password
-    );
+  async registerUser(email: string, password: string): Promise<void> {
+    try {
+      await createUserWithEmailAndPassword(this.auth, email, password);
+    } catch (error) {
+      console.error('Error registering user:', error);
+      throw error;
+    }
   }
 
   /**
    * Authenticates a user with email and password
-   * @param userAuthData - The user's email and password
-   * @returns Promise resolving to UserCredential
+   * @param email - The user's email
+   * @param password - The user's password
+   * @returns Promise resolving when authentication is complete
    */
-  async authenticateUser(userAuthData: UserAuthData): Promise<UserCredential> {
-    return signInWithEmailAndPassword(
-      this.firebaseAuth,
-      userAuthData.email,
-      userAuthData.password
-    );
+  async signInUser(email: string, password: string): Promise<void> {
+    try {
+      await signInWithEmailAndPassword(this.auth, email, password);
+    } catch (error) {
+      console.error('Error signing in user:', error);
+      throw error;
+    }
   }
 
   /**
    * Gets the current authenticated user
    * @returns The current User or null
    */
-  fetchActiveUser(): User | null {
-    return this.firebaseAuth.currentUser;
+  fetchActiveUser(): Observable<User | null> {
+    return from(new Promise<User | null>((resolve) => {
+      resolve(this.auth.currentUser);
+    }));
   }
 
   /**
@@ -69,7 +73,12 @@ export class AuthService {
    * @returns Promise resolving when sign out is complete
    */
   async signOutUser(): Promise<void> {
-    return signOut(this.firebaseAuth);
+    try {
+      await signOut(this.auth);
+    } catch (error) {
+      console.error('Error signing out user:', error);
+      throw error;
+    }
   }
 
   /**
@@ -78,6 +87,6 @@ export class AuthService {
    * @returns Promise resolving when email is sent
    */
   async resetPassword(email: string): Promise<void> {
-    return sendPasswordResetEmail(this.firebaseAuth, email);
+    return sendPasswordResetEmail(this.auth, email);
   }
 }

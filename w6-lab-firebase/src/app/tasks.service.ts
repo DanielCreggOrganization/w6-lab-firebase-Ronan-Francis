@@ -87,9 +87,14 @@ export class TasksService {
    * @param task The task to create (without id and user)
    * @returns Promise that resolves when the task is created
    */
-  async createTask(task: Task) {
-    const userId = this.authService.currentUser?.uid;
-    return addDoc(this.tasksCollectionRef, { ...task, user: userId });
+  async createTask(task: Task): Promise<void> {
+    try {
+      const userId = this.authService.currentUser?.uid;
+      await addDoc(this.tasksCollectionRef, { ...task, user: userId });
+    } catch (error) {
+      console.error('Error creating task:', error);
+      throw error;
+    }
   }
 
   /**
@@ -97,8 +102,13 @@ export class TasksService {
    * @param task The task to update (must include id)
    * @returns Promise that resolves when the update is complete
    */
-  async updateTask({ id, content }: Task) {
-    return updateDoc(doc(this.firestoreDb, `tasks/${id}`), { content });
+  async updateTask({ id, content }: Task): Promise<void> {
+    try {
+      await updateDoc(doc(this.firestoreDb, `tasks/${id}`), { content });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      throw error;
+    }
   }
 
   /**
@@ -106,8 +116,13 @@ export class TasksService {
    * @param task The task to delete (must include id)
    * @returns Promise that resolves when the deletion is complete
    */
-  async deleteTask({ id }: Task) {
-    return deleteDoc(doc(this.firestoreDb, `tasks/${id}`));
+  async deleteTask({ id }: Task): Promise<void> {
+    try {
+      await deleteDoc(doc(this.firestoreDb, `tasks/${id}`));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      throw error;
+    }
   }
 
   /**
@@ -115,7 +130,12 @@ export class TasksService {
    * @param task The task to toggle (must include id and completed status)
    * @returns Promise that resolves when the update is complete
    */
-  async toggleTaskCompleted({ id, completed }: Task) {
-    return updateDoc(doc(this.firestoreDb, `tasks/${id}`), { completed });
+  async toggleTaskCompleted({ id, completed }: Task): Promise<void> {
+    try {
+      await updateDoc(doc(this.firestoreDb, `tasks/${id}`), { completed });
+    } catch (error) {
+      console.error('Error toggling task completed status:', error);
+      throw error;
+    }
   }
 }
